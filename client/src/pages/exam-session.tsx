@@ -64,27 +64,27 @@ export default function ExamSessionPage() {
     enabled: !!session?.sessionQuestionIds && session.sessionQuestionIds.length > 0,
   });
 
-    const saveProgressMutation = useMutation({
-      mutationFn: async (data: { answers: Record<string, string>; currentQuestionIndex: number }) => {
-        return apiRequest("PATCH", `/api/exam-sessions/${sessionId}`, data);
-      },
-    });
+  const saveProgressMutation = useMutation({
+    mutationFn: async (data: { answers: Record<string, string>; currentQuestionIndex: number }) => {
+      return apiRequest("PATCH", `/api/exam-sessions/${sessionId}`, data);
+    },
+  });
 
-    const submitExamMutation = useMutation<Result, unknown, void>({
-      mutationFn: async () => {
-        return apiRequest<Result>("POST", `/api/exam-sessions/${sessionId}/submit`, { answers });
-      },
-      onSuccess: (result) => {
-        queryClient.invalidateQueries({ queryKey: ["/api/exam-sessions"] });
-        setLocation(`/exam/result/${result.id}`);
-      },
-    });
+  const submitExamMutation = useMutation<Result, unknown, void>({
+    mutationFn: async () => {
+      return apiRequest<Result>("POST", `/api/exam-sessions/${sessionId}/submit`, { answers });
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/exam-sessions"] });
+      setLocation(`/exam/result/${result.id}`);
+    },
+  });
 
-    function handleAutoSubmit() {
-      if (!submitExamMutation.isPending) {
-        submitExamMutation.mutate();
-      }
+  function handleAutoSubmit() {
+    if (!submitExamMutation.isPending) {
+      submitExamMutation.mutate();
     }
+  }
 
   useEffect(() => {
     if (session && exam) {
