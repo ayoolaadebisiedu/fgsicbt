@@ -80,11 +80,11 @@ export default function ExamSessionPage() {
       },
     });
 
-    const handleAutoSubmit = useCallback(() => {
+    function handleAutoSubmit() {
       if (!submitExamMutation.isPending) {
         submitExamMutation.mutate();
       }
-    }, [submitExamMutation]);
+    }
 
   useEffect(() => {
     if (session && exam) {
