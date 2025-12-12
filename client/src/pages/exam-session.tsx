@@ -106,7 +106,10 @@ export default function ExamSessionPage() {
 
       if ((sessionHasExplicitTime && initialTime <= 0) || (!sessionHasExplicitTime && elapsedExceeded)) {
         if (!session.isCompleted) {
-          handleAutoSubmit();
+          // Don't auto-submit immediately on page load. Show the submit dialog
+          // so the user sees that the exam appears expired and can confirm.
+          setTimeRemaining(0);
+          setShowSubmitDialog(true);
         }
         return;
       }
