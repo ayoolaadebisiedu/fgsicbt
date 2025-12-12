@@ -97,13 +97,20 @@ export default function ExamSessionPage() {
         : 0;
       const initialTime = session.timeRemaining ?? Math.max(0, examDurationSeconds - elapsedSeconds);
       setTimeRemaining(initialTime);
-      
-      if (initialTime <= 0) {
+
+      // Only auto-submit if it's clear time has expired:
+      // - the session explicitly reports `timeRemaining` (e.g. resumed session) and it's <= 0, OR
+      // - the elapsed time since `startedAt` is >= exam duration (exam expired while user was away).
+      const sessionHasExplicitTime = typeof session.timeRemaining === "number";
+      const elapsedExceeded = elapsedSeconds >= examDurationSeconds;
+
+      if ((sessionHasExplicitTime && initialTime <= 0) || (!sessionHasExplicitTime && elapsedExceeded)) {
         if (!session.isCompleted) {
           handleAutoSubmit();
         }
         return;
-      };
+      }
+      
 
       const timerId = setInterval(() => {
         setTimeRemaining(prev => {
