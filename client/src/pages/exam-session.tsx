@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -80,14 +80,9 @@ export default function ExamSessionPage() {
     },
   });
 
-  function handleAutoSubmit() {
-    if (!submitExamMutation.isPending) {
-      submitExamMutation.mutate();
-    }
-  }
-
+  // Initialize exam session state and time
   useEffect(() => {
-    if (session && exam) {
+    if (session && exam && !session.isCompleted) {
       setAnswers(session.answers || {});
       setCurrentQuestionIndex(session.currentQuestionIndex || 0);
 
@@ -97,39 +92,33 @@ export default function ExamSessionPage() {
         : 0;
       const initialTime = session.timeRemaining ?? Math.max(0, examDurationSeconds - elapsedSeconds);
       setTimeRemaining(initialTime);
-
-      // Only auto-submit if it's clear time has expired:
-      // - the session explicitly reports `timeRemaining` (e.g. resumed session) and it's <= 0, OR
-      // - the elapsed time since `startedAt` is >= exam duration (exam expired while user was away).
-      const sessionHasExplicitTime = typeof session.timeRemaining === "number";
-      const elapsedExceeded = elapsedSeconds >= examDurationSeconds;
-
-      if ((sessionHasExplicitTime && initialTime <= 0) || (!sessionHasExplicitTime && elapsedExceeded)) {
+      
+      if (initialTime <= 0) {
         if (!session.isCompleted) {
-          // Don't auto-submit immediately on page load. Show the submit dialog
-          // so the user sees that the exam appears expired and can confirm.
-          setTimeRemaining(0);
-          setShowSubmitDialog(true);
+          handleAutoSubmit();
         }
         return;
-      }
-      
+      };
 
-      const timerId = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            clearInterval(timerId);
-            handleAutoSubmit();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    const timerId = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timerId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-      return () => clearInterval(timerId);
+    return () => clearInterval(timerId);
+  }, [session?.isCompleted]);
+
+  // Auto-submit when time runs out
+  useEffect(() => {
+    if (timeRemaining === 0 && !session?.isCompleted && !submitExamMutation.isPending) {
+      submitExamMutation.mutate();
     }
-  }, [session, exam, handleAutoSubmit]);
-
+  }, [timeRemaining, session?.isCompleted, submitExamMutation]);
 
   const handleAnswerChange = (questionId: string, answer: string) => {
     const newAnswers = { ...answers, [questionId]: answer };
